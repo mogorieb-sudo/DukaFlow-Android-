@@ -7,8 +7,8 @@
         android:allowBackup="true"
         android:label="DukaFlow"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DukaFlow">
-        android:icon="@drawable/icon_192"
+        android:theme="@style/Theme.DukaFlow"
+        android:icon="@drawable/icon_192">
 
         <activity
             android:name=".MainActivity"
