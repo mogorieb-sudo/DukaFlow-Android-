@@ -27,12 +27,23 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Decode signing keystore
+      - name: Decode and verify keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/dukaflow-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/dukaflow-release.jks"
 
+          echo "Keystore size:"
+          wc -c "$GITHUB_WORKSPACE/dukaflow-release.jks"
+
+          echo "Keystore type:"
+          file "$GITHUB_WORKSPACE/dukaflow-release.jks"
+
+          echo "Testing keystore:"
+          keytool -list \
+            -keystore "$GITHUB_WORKSPACE/dukaflow-release.jks" \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}"
       - name: Build unsigned release APK
         run: gradle assembleRelease
 
