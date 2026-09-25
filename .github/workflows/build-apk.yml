@@ -31,6 +31,8 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
+         echo "Base64 secret hash:"
+         printf '%s' "$KEYSTORE_BASE64" | sha256sum
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/dukaflow-release.jks"
           sha256sum "$GITHUB_WORKSPACE/dukaflow-release.jks"
           echo "Keystore size:"
