@@ -33,16 +33,37 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/dukaflow-release.jks"
 
-      - name: Build signed release APK
-        env:
-          KEYSTORE_FILE: ${{ github.workspace }}/dukaflow-release.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Build unsigned release APK
         run: gradle assembleRelease
+
+      - name: Zipalign APK
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" \
+            -v -p 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/dukaflow-aligned.apk
+
+      - name: Sign APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$GITHUB_WORKSPACE/dukaflow-release.jks" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out app/build/outputs/apk/release/DukaFlow.apk \
+            app/build/outputs/apk/release/dukaflow-aligned.apk
+
+      - name: Verify signed APK
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose \
+            app/build/outputs/apk/release/DukaFlow.apk
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
           name: DukaFlow-release-APK
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/DukaFlow.apk
